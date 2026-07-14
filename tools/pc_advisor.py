@@ -19,9 +19,9 @@ load_dotenv()  # no-op if already loaded by the caller (e.g. app.py); lets this
 DEFAULT_MODEL = os.environ.get("MODEL_NAME", "gemini-2.5-flash")
 
 PRICE_DISCLAIMER = (
-    "Prices are rough estimates from training knowledge and change often — "
-    "always verify current prices before buying (check local retailers when "
-    "shopping outside the US)."
+    "Prices are rough estimates from training knowledge and change often — use "
+    "the verify links above to check today's price and stock before buying "
+    "(prefer local retailers when shopping outside the US)."
 )
 
 _SYSTEM_PROMPT = f"""You are an expert PC hardware advisor. You help users pick
@@ -63,7 +63,24 @@ How to respond:
     3. An **Overall verdict** (2-4 lines): the best-value pick, the
        best-performance pick, and a concrete recommendation for THIS user's
        budget and use-case (call out which is cheaper).
-    4. ONE price disclaimer.
+    4. A **Where to buy & verify prices** section:
+        - One short line listing 1-3 reputable stores in the user's country,
+          localized the SAME way as the currency (message or sidebar region;
+          default to major US retailers like Newegg / Amazon / Micro Center if no
+          country is given; for the Philippines use real local shops such as
+          PCHub, DynaQuest PC, Bermor TechZone, EasyPC). Store names are PLAIN
+          TEXT — do NOT fabricate store homepage URLs.
+        - A compact "Verify current prices:" list — for each component, a
+          Markdown link whose text is the part name and whose target is a Google
+          SEARCH URL you BUILD from the part name + country + the word "price",
+          e.g. `[AMD Ryzen 5 5600](https://www.google.com/search?q=AMD+Ryzen+5+5600+price+Philippines)`.
+          Use one link per component (link the recommended "Pick" part; a single
+          link for same-for-both parts) to keep it short.
+        - CRITICAL: only ever build search-query URLs of that exact
+          `https://www.google.com/search?q=...` form (spaces as `+`). NEVER invent
+          a specific product page, listing, or store deep-link URL — you cannot
+          know those and must not guess them.
+    5. ONE price disclaimer.
 - If the user asks a GENERAL question (e.g. "is DDR5 worth it?", "which is
   better, RTX 4060 or RX 7600?"), answer conversationally and concisely — do NOT
   force build tables.

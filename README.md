@@ -9,8 +9,10 @@ storage, PSU, and case — with approximate prices, a one-word **Pick** and a
 one-sentence **Reason** (budget vs performance) per part, two path totals
 (Intel+NVIDIA vs AMD), expected performance, and an overall verdict. Mention your
 country (or set it in the sidebar)
-and prices are shown in your **local currency** (e.g. ₱ PHP). Responses stream in
-live, and you can also ask general PC-hardware questions.
+and prices are shown in your **local currency** (e.g. ₱ PHP), along with
+localized **store suggestions and one-click "verify price" search links** per
+part. Responses stream in live, and you can also ask general PC-hardware
+questions.
 
 Free to run: it uses the **Google Gemini free tier** and the model's own
 hardware knowledge (no paid APIs, no scraping).

@@ -82,10 +82,29 @@ After the table:
 3. An **overall verdict** (2–4 lines): best value pick, best performance pick,
    and a concrete recommendation for this budget/use-case, noting which is
    cheaper.
+4. A **Where to buy & verify prices** section (see below).
 
 If the budget is unrealistic for the use-case, say so honestly and offer the
 closest sensible option (a lower target, a used-market suggestion, or a slightly
 higher budget).
+
+## Where to buy & verify prices
+
+Because prices come from training knowledge (not a live feed), help the user
+check the real, current price themselves:
+
+- **Stores:** one short line naming 1–3 reputable stores in the user's country,
+  localized the same way as the currency (default major US retailers — Newegg,
+  Amazon, Micro Center — if no country is given; for the Philippines use real
+  local shops like PCHub, DynaQuest PC, Bermor TechZone, EasyPC). Store names are
+  **plain text** — never fabricate store homepage URLs.
+- **Verify links:** a compact "Verify current prices" list with one Markdown link
+  per component, linking the recommended part to a Google **search** URL built
+  from the part name + country + "price", e.g.
+  `[AMD Ryzen 5 5600](https://www.google.com/search?q=AMD+Ryzen+5+5600+price+Philippines)`.
+- **Never** build a specific product-page or store deep-link URL — only
+  `https://www.google.com/search?q=...` search queries (spaces as `+`). These are
+  the only links that reliably work without live web access.
 
 ## Currency & regional availability
 
