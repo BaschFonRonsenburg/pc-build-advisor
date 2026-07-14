@@ -43,16 +43,19 @@ point the image above at that file.</sub>
    ```
    ```
    GEMINI_API_KEY=your-key-here
-   MODEL_NAME=gemini-2.5-flash
+   MODEL_NAME=gemini-flash-latest
    ```
 4. Run the app:
    ```
    streamlit run app.py
    ```
 
-> The Gemini free tier allows only a few requests per minute. The app **auto-retries**
-> briefly if it hits that throttle; if it still can't get through, it keeps your
-> question so you can resend it with one click.
+> The Gemini free tier has small per-minute **and per-day** limits, per API key
+> and per model. The app **auto-retries** brief throttles and **falls back**
+> between models (`MODEL_NAME` → `FALLBACK_MODELS`) when one is exhausted; if it
+> still can't get through, it keeps your question so you can resend with one click.
+> If everything is capped, the daily quota resets the next day — or add a second
+> free key.
 
 ## Project layout
 

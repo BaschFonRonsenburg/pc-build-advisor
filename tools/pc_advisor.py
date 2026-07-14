@@ -17,7 +17,24 @@ from tools.load_guidelines import load_guidelines
 load_dotenv()  # no-op if already loaded by the caller (e.g. app.py); lets this
                # module also be run standalone via `python -m tools.pc_advisor`
 
-DEFAULT_MODEL = os.environ.get("MODEL_NAME", "gemini-2.5-flash")
+DEFAULT_MODEL = os.environ.get("MODEL_NAME", "gemini-flash-latest")
+
+# Free-tier quota is per-key AND per-model (and has a small daily cap). If the
+# primary model is exhausted/busy, transparently fall back to another model.
+_FALLBACK_MODELS = [
+    m.strip()
+    for m in os.environ.get("FALLBACK_MODELS", "gemini-2.5-flash").split(",")
+    if m.strip()
+]
+
+
+def _model_candidates(model: str) -> list:
+    """[primary, *fallbacks] with duplicates/empties removed, primary first."""
+    ordered = []
+    for m in [model, *_FALLBACK_MODELS]:
+        if m and m not in ordered:
+            ordered.append(m)
+    return ordered
 
 PRICE_DISCLAIMER = (
     "Prices are rough estimates from training knowledge and change often — use "
@@ -241,28 +258,34 @@ def chat(messages: list, region: str = None, model: str = DEFAULT_MODEL) -> LLMR
 
     contents = _to_gemini_contents(messages)
     config = types.GenerateContentConfig(system_instruction=_build_system_instruction(region))
+    candidates = _model_candidates(model)
 
-    response = None
+    last_exc = None
     for attempt in range(len(_RETRY_DELAYS) + 1):
-        try:
-            response = _get_client().models.generate_content(
-                model=model, contents=contents, config=config
-            )
-            break
-        except Exception as exc:  # never let an unexpected error crash the caller
-            # Ride out a transient rate limit / server blip; fail fast otherwise.
-            if _is_transient(exc) and attempt < len(_RETRY_DELAYS):
-                time.sleep(_RETRY_DELAYS[attempt])
-                continue
-            return LLMResult(success=False, error=_friendly_error(exc))
+        for cand in candidates:
+            try:
+                response = _get_client().models.generate_content(
+                    model=cand, contents=contents, config=config
+                )
+            except Exception as exc:  # never let an unexpected error crash the caller
+                last_exc = exc
+                if _is_transient(exc):
+                    continue  # this model is rate-limited/busy — try the next one
+                return LLMResult(success=False, error=_friendly_error(exc))
 
-    text = (response.text or "").strip()
-    if not text:
-        return LLMResult(
-            success=False,
-            error="Gemini returned an empty response (possibly blocked or filtered) — try rephrasing.",
-        )
-    return LLMResult(success=True, text=text, model=model)
+            text = (response.text or "").strip()
+            if not text:
+                return LLMResult(
+                    success=False,
+                    error="Gemini returned an empty response (possibly blocked or filtered) — try rephrasing.",
+                )
+            return LLMResult(success=True, text=text, model=cand)
+
+        # Every candidate model was transiently rate-limited this pass — wait, retry.
+        if attempt < len(_RETRY_DELAYS):
+            time.sleep(_RETRY_DELAYS[attempt])
+
+    return LLMResult(success=False, error=_friendly_error(last_exc))
 
 
 def stream_chat(messages: list, region: str = None, model: str = DEFAULT_MODEL):
@@ -279,25 +302,34 @@ def stream_chat(messages: list, region: str = None, model: str = DEFAULT_MODEL):
 
     contents = _to_gemini_contents(messages)
     config = types.GenerateContentConfig(system_instruction=_build_system_instruction(region))
+    candidates = _model_candidates(model)
 
+    last_exc = None
     for attempt in range(len(_RETRY_DELAYS) + 1):
-        yielded = False
-        try:
-            stream = _get_client().models.generate_content_stream(
-                model=model, contents=contents, config=config
-            )
-            for chunk in stream:
-                if chunk.text:
-                    yielded = True
-                    yield chunk.text
-            return  # stream finished cleanly
-        except Exception as exc:
-            # Only retry a transient error that struck BEFORE any output — retrying
-            # mid-stream would duplicate already-shown text.
-            if _is_transient(exc) and not yielded and attempt < len(_RETRY_DELAYS):
-                time.sleep(_RETRY_DELAYS[attempt])
-                continue
-            raise AdvisorError(_friendly_error(exc)) from exc
+        for cand in candidates:
+            yielded = False
+            try:
+                stream = _get_client().models.generate_content_stream(
+                    model=cand, contents=contents, config=config
+                )
+                for chunk in stream:
+                    if chunk.text:
+                        yielded = True
+                        yield chunk.text
+                return  # stream finished cleanly
+            except Exception as exc:
+                last_exc = exc
+                # Fall over to another model / retry ONLY if the error struck before
+                # any output — retrying mid-stream would duplicate shown text.
+                if _is_transient(exc) and not yielded:
+                    continue  # try the next candidate model immediately
+                raise AdvisorError(_friendly_error(exc)) from exc
+
+        # Every candidate was transiently rate-limited before yielding — wait, retry.
+        if attempt < len(_RETRY_DELAYS):
+            time.sleep(_RETRY_DELAYS[attempt])
+
+    raise AdvisorError(_friendly_error(last_exc))
 
 
 if __name__ == "__main__":
