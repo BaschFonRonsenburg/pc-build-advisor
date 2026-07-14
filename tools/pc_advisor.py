@@ -5,6 +5,7 @@ Pure LLM-call logic, no Streamlit import. Standalone test:
 """
 
 import os
+import time
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
@@ -203,6 +204,19 @@ def _friendly_error(exc: Exception) -> str:
     return f"Unexpected error calling Gemini API: {exc}"
 
 
+# Wait times (seconds) between retries when we hit a transient error. The free
+# tier's per-minute limit is a rolling window, so a short wait usually clears it.
+_RETRY_DELAYS = (12, 22)
+
+
+def _is_transient(exc: Exception) -> bool:
+    """True for errors worth retrying: a 429 rate limit or a 5xx server error.
+    Auth/validation errors are NOT transient and should fail immediately."""
+    if isinstance(exc, errors.ClientError):
+        return getattr(exc, "code", None) == 429
+    return isinstance(exc, errors.ServerError)
+
+
 _MISSING_KEY_MSG = (
     "Gemini API key is missing — add GEMINI_API_KEY to .env "
     "(get a free key at https://aistudio.google.com/apikey) and restart."
@@ -225,17 +239,22 @@ def chat(messages: list, region: str = None, model: str = DEFAULT_MODEL) -> LLMR
     if not messages:
         return LLMResult(success=False, error="No message to send.")
 
-    try:
-        client = _get_client()
-        response = client.models.generate_content(
-            model=model,
-            contents=_to_gemini_contents(messages),
-            config=types.GenerateContentConfig(
-                system_instruction=_build_system_instruction(region)
-            ),
-        )
-    except Exception as exc:  # never let an unexpected error crash the caller
-        return LLMResult(success=False, error=_friendly_error(exc))
+    contents = _to_gemini_contents(messages)
+    config = types.GenerateContentConfig(system_instruction=_build_system_instruction(region))
+
+    response = None
+    for attempt in range(len(_RETRY_DELAYS) + 1):
+        try:
+            response = _get_client().models.generate_content(
+                model=model, contents=contents, config=config
+            )
+            break
+        except Exception as exc:  # never let an unexpected error crash the caller
+            # Ride out a transient rate limit / server blip; fail fast otherwise.
+            if _is_transient(exc) and attempt < len(_RETRY_DELAYS):
+                time.sleep(_RETRY_DELAYS[attempt])
+                continue
+            return LLMResult(success=False, error=_friendly_error(exc))
 
     text = (response.text or "").strip()
     if not text:
@@ -258,22 +277,27 @@ def stream_chat(messages: list, region: str = None, model: str = DEFAULT_MODEL):
     if not messages:
         raise AdvisorError("No message to send.")
 
-    try:
-        client = _get_client()
-        stream = client.models.generate_content_stream(
-            model=model,
-            contents=_to_gemini_contents(messages),
-            config=types.GenerateContentConfig(
-                system_instruction=_build_system_instruction(region)
-            ),
-        )
-        for chunk in stream:
-            if chunk.text:
-                yield chunk.text
-    except AdvisorError:
-        raise
-    except Exception as exc:
-        raise AdvisorError(_friendly_error(exc)) from exc
+    contents = _to_gemini_contents(messages)
+    config = types.GenerateContentConfig(system_instruction=_build_system_instruction(region))
+
+    for attempt in range(len(_RETRY_DELAYS) + 1):
+        yielded = False
+        try:
+            stream = _get_client().models.generate_content_stream(
+                model=model, contents=contents, config=config
+            )
+            for chunk in stream:
+                if chunk.text:
+                    yielded = True
+                    yield chunk.text
+            return  # stream finished cleanly
+        except Exception as exc:
+            # Only retry a transient error that struck BEFORE any output — retrying
+            # mid-stream would duplicate already-shown text.
+            if _is_transient(exc) and not yielded and attempt < len(_RETRY_DELAYS):
+                time.sleep(_RETRY_DELAYS[attempt])
+                continue
+            raise AdvisorError(_friendly_error(exc)) from exc
 
 
 if __name__ == "__main__":

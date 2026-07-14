@@ -50,6 +50,10 @@ point the image above at that file.</sub>
    streamlit run app.py
    ```
 
+> The Gemini free tier allows only a few requests per minute. The app **auto-retries**
+> briefly if it hits that throttle; if it still can't get through, it keeps your
+> question so you can resend it with one click.
+
 ## Project layout
 
 - `app.py` — Streamlit chat UI (thin orchestrator, calls into `tools/` only);

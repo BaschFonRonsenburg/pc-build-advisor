@@ -100,25 +100,37 @@ for msg in st.session_state.messages:
 
 
 def _handle_user_message(user_text: str, region: str = None):
+    st.session_state.pending_retry = None  # a new attempt clears any prior failure
     st.session_state.messages.append({"role": "user", "content": user_text})
     with st.chat_message("user"):
         st.markdown(user_text)
 
     with st.chat_message("assistant"):
         try:
-            # st.write_stream renders chunks live and returns the full text.
-            full = st.write_stream(stream_chat(st.session_state.messages, region))
+            # The spinner shows during any brief free-tier wait/auto-retry before
+            # the reply starts streaming in (st.write_stream returns the full text).
+            with st.spinner("Working… (the free tier may add a brief wait)"):
+                full = st.write_stream(stream_chat(st.session_state.messages, region))
             st.session_state.messages.append({"role": "assistant", "content": full})
         except AdvisorError as e:
             st.error(str(e))
-            # Drop the user turn that failed so retries don't stack a broken
-            # history; the user can simply ask again.
+            # Drop the failed user turn so history stays clean, but remember the
+            # question so the user can resend it with one click (below).
             st.session_state.messages.pop()
+            st.session_state.pending_retry = user_text
 
 
 # Sidebar example button acts like typing that prompt.
 if example_clicked:
     _handle_user_message(example_clicked, region)
+
+# If the last question failed (e.g. a transient rate limit), offer a one-click
+# resend so the user never has to retype it.
+if st.session_state.get("pending_retry"):
+    q = st.session_state["pending_retry"]
+    st.warning("That didn't go through (the free tier was busy). Your question is saved.")
+    if st.button(f"🔄 Retry: {q[:60]}{'…' if len(q) > 60 else ''}", use_container_width=True):
+        _handle_user_message(q, region)
 
 # Normal chat input.
 prompt = st.chat_input("Ask about PC parts or request a build for your budget...")
