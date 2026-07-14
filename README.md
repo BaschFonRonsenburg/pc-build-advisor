@@ -12,14 +12,19 @@ country (or set it in the sidebar)
 and prices are shown in your **local currency** (e.g. ₱ PHP). Responses stream in
 live, and you can also ask general PC-hardware questions.
 
-Built on a WAT structure (Workflows, Agents, Tools): plain-language SOPs in
-`workflows/`, deterministic Python tools in `tools/`, and a thin `app.py`
-orchestrator that ties them together.
 Free to run: it uses the **Google Gemini free tier** and the model's own
 hardware knowledge (no paid APIs, no scraping).
 
 > Prices are estimates from the model's training data, not a live feed — always
 > verify current prices before buying.
+
+## Preview
+
+![PC Build Advisor preview](docs/preview.svg)
+
+<sub>Illustrative mockup of the chat UI. To use a real screenshot instead: run
+`streamlit run app.py`, capture the chat, save it as `docs/screenshot.png`, and
+point the image above at that file.</sub>
 
 ## Setup
 
@@ -66,3 +71,7 @@ take effect on the next message.
 python -m tools.load_guidelines     # prints the guidelines
 python -m tools.pc_advisor          # runs a sample "$1000 gaming build" query
 ```
+
+## License
+
+Released under the [MIT License](LICENSE).
