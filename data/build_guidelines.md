@@ -79,10 +79,15 @@ After the table:
    under budget (flag clearly if a path goes over and why).
 2. A one-line **performance expectation** (target resolution + rough FPS, or the
    workloads it handles well).
-3. An **overall verdict** (2–4 lines): best value pick, best performance pick,
+3. **Build details** — three compact lines: (a) *included / not included* (tower
+   only; OS, monitor, keyboard/mouse are extra and not in the total; note if a
+   Wi-Fi card is needed), (b) *power* (estimated total load + recommended PSU
+   wattage with headroom), (c) *upgrade path* (the smartest next upgrade on this
+   platform).
+4. An **overall verdict** (2–4 lines): best value pick, best performance pick,
    and a concrete recommendation for this budget/use-case, noting which is
    cheaper.
-4. A **Where to buy & verify prices** section (see below).
+5. A **Where to buy & verify prices** section (see below).
 
 If the budget is unrealistic for the use-case, say so honestly and offer the
 closest sensible option (a lower target, a used-market suggestion, or a slightly
@@ -98,13 +103,21 @@ check the real, current price themselves:
   Amazon, Micro Center — if no country is given; for the Philippines use real
   local shops like PCHub, DynaQuest PC, Bermor TechZone, EasyPC). Store names are
   **plain text** — never fabricate store homepage URLs.
+- **Price the whole build (one-stop):**
+  - **PCPartPicker** — link the country builder `https://<cc>.pcpartpicker.com/list/`,
+    `<cc>` only from the allowlist `uk, ca, au, nz, ie, de, fr, es, it, be, nl,
+    se, dk, in, ph` (US = `https://pcpartpicker.com/list/`, no subdomain). If the
+    country isn't in the allowlist, omit PCPartPicker and use only Google Shopping.
+  - **Google Shopping** — one link combining the picked CPU + GPU + country:
+    `https://www.google.com/search?tbm=shop&q=<cpu>+<gpu>+<country>`.
 - **Verify links:** a compact "Verify current prices" list with one Markdown link
   per component, linking the recommended part to a Google **search** URL built
   from the part name + country + "price", e.g.
   `[AMD Ryzen 5 5600](https://www.google.com/search?q=AMD+Ryzen+5+5600+price+Philippines)`.
-- **Never** build a specific product-page or store deep-link URL — only
-  `https://www.google.com/search?q=...` search queries (spaces as `+`). These are
-  the only links that reliably work without live web access.
+- **Only** these two URL shapes are allowed: `https://www.google.com/search?...`
+  queries and `https://[<cc>.]pcpartpicker.com/list/` builder links (spaces as
+  `+`). **Never** build a specific product-page, listing, or store deep-link URL —
+  those can't be known without live web access.
 
 ## Currency & regional availability
 

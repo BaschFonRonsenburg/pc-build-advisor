@@ -33,9 +33,12 @@ Triggered interactively whenever the user sends a message in the Streamlit chat
   showing both an Intel/NVIDIA option and its AMD counterpart per row (brand-
   agnostic parts marked "same for both"), a one-word **Pick** and a one-sentence
   **Reason** (budget vs performance) per row, followed by **two path totals**
-  (Intel+NVIDIA vs AMD), a **Performance expectation**, an **Overall verdict**, a
-  **Where to buy & verify prices** block (localized store names + one Google
-  search "verify price" link per part), and one price disclaimer.
+  (Intel+NVIDIA vs AMD), a **Performance expectation**, **Build details**
+  (included vs not / est. wattage + PSU headroom / upgrade path), an **Overall
+  verdict**, a **Where to buy & verify prices** block (localized store names, a
+  one-stop "price the whole build" link — PCPartPicker localized + Google
+  Shopping — and one Google search "verify price" link per part), and one price
+  disclaimer.
 - **Currency** → USD by default; if the user names a country/currency, or a
   default region is set in the sidebar, the entire build (parts, totals, budget)
   is priced in that local currency with the column header relabeled (e.g.

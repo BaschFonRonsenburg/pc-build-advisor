@@ -9,10 +9,12 @@ storage, PSU, and case — with approximate prices, a one-word **Pick** and a
 one-sentence **Reason** (budget vs performance) per part, two path totals
 (Intel+NVIDIA vs AMD), expected performance, and an overall verdict. Mention your
 country (or set it in the sidebar)
-and prices are shown in your **local currency** (e.g. ₱ PHP), along with
-localized **store suggestions and one-click "verify price" search links** per
-part. Responses stream in live, and you can also ask general PC-hardware
-questions.
+and prices are shown in your **local currency** (e.g. ₱ PHP). Each build is a
+one-stop shop: localized **store suggestions**, one-click **"verify price"
+links** per part, a **"price the whole build"** link (PCPartPicker, localized, +
+Google Shopping), and **build details** (what's included vs not, estimated
+wattage + PSU headroom, and an upgrade path). Responses stream in live, and you
+can also ask general PC-hardware questions.
 
 Free to run: it uses the **Google Gemini free tier** and the model's own
 hardware knowledge (no paid APIs, no scraping).
